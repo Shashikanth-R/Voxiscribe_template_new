@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Welcome, {{ session.username }}! (Teacher)</h1>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+</div>
+
+<div class="card">
+    <h2>Teacher Dashboard</h2>
+    <a href="{{ url_for('create_exam') }}" class="btn">Create New Exam</a>
+    <hr class="mt-3">
+    <h3>Your Exams</h3>
+    <ul class="exam-list">
+        {% for exam in exams %}
+            <li class="exam-list-item">
+                <span>{{ exam[1] }}</span>
+                <div>
+                    {% if not exam[4] %}
+                        <button class="btn btn-secondary publish-btn" data-exam-id="{{ exam[0] }}">Publish</button>
+                    {% else %}
+                        <span style="color: green;">Published</span>
+                    {% endif %}
+                    <a href="#" class="btn btn-secondary">Edit</a>
+                    <a href="#" class="btn btn-danger">Delete</a>
+                </div>
+            </li>
+        {% else %}
+            <li>You have not created any exams yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const publishButtons = document.querySelectorAll('.publish-btn');
+        publishButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const examId = this.dataset.examId;
+                fetch(`/teacher/exams/${examId}/publish`, {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.outerHTML = '<span style="color: green;">Published</span>';
+                    } else {
+                        alert('Failed to publish exam.');
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

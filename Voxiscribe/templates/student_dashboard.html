@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Welcome, {{ session.username }}! (Student)</h1>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+</div>
+
+<div class="card">
+    <h2>Student Dashboard</h2>
+    <h3>Available Exams</h3>
+    <ul class="exam-list" id="exam-list"></ul>
+    <h3 style="margin-top:20px;">Completed Exams</h3>
+    <ul class="exam-list" id="completed-list"></ul>
+</div>
+
+<script>
+let lastIds = [];
+async function fetchExams() {
+    try{
+        const res = await fetch("{{ url_for('student_exams_status') }}");
+        const data = await res.json();
+        const examList = document.getElementById('exam-list');
+        const completedList = document.getElementById('completed-list');
+        examList.innerHTML = '';
+        completedList.innerHTML = '';
+        const ids = [];
+
+        if (data.available && data.available.length > 0) {
+            data.available.forEach(exam => {
+                ids.push(exam.id);
+                const li = document.createElement('li');
+                li.className = 'exam-list-item';
+                li.innerHTML = `
+                    <span>${exam.title} (${exam.duration} minutes)</span>
+                    <a href="/exam_instructions?exam_id=${exam.id}" class="btn">Take Exam</a>
+                `;
+                examList.appendChild(li);
+            });
+        } else {
+            examList.innerHTML = '<li>No exams available at the moment.</li>';
+        }
+
+        if (data.completed && data.completed.length > 0) {
+            data.completed.forEach(exam => {
+                const li = document.createElement('li');
+                li.className = 'exam-list-item';
+                li.innerHTML = `
+                    <span>${exam.title} (${exam.duration} minutes)</span>
+                    <span class="submitted"><i class="fas fa-check-circle"></i> Submitted</span>
+                `;
+                completedList.appendChild(li);
+            });
+        } else {
+            completedList.innerHTML = '<li>No completed exams yet.</li>';
+        }
+
+        if (lastIds.length && ids.some(id => !lastIds.includes(id))) {
+            window.showToast && window.showToast('New exam published – refresh to see!');
+        }
+        lastIds = ids;
+    }catch(e){
+        // ignore
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchExams();
+    setInterval(fetchExams, 10000); // Refresh every 10 seconds
+});
+</script>
+{% endblock %}
